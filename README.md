@@ -31,32 +31,63 @@ Passes `qdrant_settings.vector_name` as 7th argument to `QdrantConnector()`.
 ### `mcp_server_qdrant/embeddings/fastembed.py`
 Reverted to clean upstream state (no env var hacks at the provider level).
 
-## Installation
+## Installation & registration in Claude Code
+
+### macOS / Linux
 
 ```bash
-uv tool install --editable /path/to/this/fork
+# Register as user-scoped MCP server (available in all projects)
+claude mcp add \
+  -e QDRANT_URL=https://your-qdrant-host:443 \
+  -e QDRANT_API_KEY=<your-api-key> \
+  -e COLLECTION_NAME=library \
+  -e QDRANT_VECTOR_NAME=dense \
+  -e EMBEDDING_MODEL=nomic-ai/nomic-embed-text-v1.5 \
+  -e QDRANT_READ_ONLY=true \
+  --scope user \
+  qdrant -- uvx --from /path/to/this/fork mcp-server-qdrant
 ```
 
-This creates an editable install — source changes are live immediately without reinstall.
+### Windows
 
-## Configuration
+Find the `uvx.exe` path first:
 
-```json
-{
-  "type": "stdio",
-  "command": "/Users/<you>/.local/bin/mcp-server-qdrant",
-  "args": [],
-  "env": {
-    "QDRANT_URL": "https://your-qdrant-host:443",
-    "QDRANT_API_KEY": "<your-api-key>",
-    "QDRANT_VECTOR_NAME": "dense",
-    "EMBEDDING_MODEL": "BAAI/bge-base-en-v1.5",
-    "COLLECTION_NAME": "your-collection"
-  }
-}
+```powershell
+where uvx
+# → C:\Users\<you>\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_...\uvx.exe
 ```
 
-`QDRANT_VECTOR_NAME` must match the vector name used when the collection was created. For collections built with BGE models via n8n, this is typically `dense`.
+Then register (use the full path — Claude Code may not inherit your PATH):
+
+```bash
+claude mcp add \
+  -e QDRANT_URL=https://your-qdrant-host:443 \
+  -e "QDRANT_API_KEY=<your-api-key>" \
+  -e COLLECTION_NAME=library \
+  -e QDRANT_VECTOR_NAME=dense \
+  -e "EMBEDDING_MODEL=nomic-ai/nomic-embed-text-v1.5" \
+  -e QDRANT_READ_ONLY=true \
+  --scope user \
+  qdrant -- "C:/Users/<you>/AppData/Local/.../uvx.exe" --from "C:/path/to/this/fork" mcp-server-qdrant
+```
+
+Verify: `claude mcp get qdrant` — should show `Status: ✓ Connected`.
+
+> **Why `uvx --from <local-path>`**: runs the fork directly without a global install.
+> Source changes are live immediately without reinstall.
+
+## Configuration reference
+
+| Variable | Required | Description |
+|---|---|---|
+| `QDRANT_URL` | ✓ | Include `:443` for HTTPS (qdrant-client 1.18+ bug with bare hostname) |
+| `QDRANT_API_KEY` | if auth | Qdrant API key |
+| `COLLECTION_NAME` | ✓ | Target collection |
+| `QDRANT_VECTOR_NAME` | ✓ | Must match the named vector in the collection (e.g. `dense`) |
+| `EMBEDDING_MODEL` | ✓ | FastEmbed model — use `nomic-ai/nomic-embed-text-v1.5` for collections built with Ollama `nomic-embed-text` |
+| `QDRANT_READ_ONLY` | — | Set `true` to disable the `qdrant-store` tool |
+
+`QDRANT_VECTOR_NAME` must match the vector name used when the collection was created. For the `reports-pipeline` library collection, this is `dense`.
 
 ## Keeping up with upstream
 

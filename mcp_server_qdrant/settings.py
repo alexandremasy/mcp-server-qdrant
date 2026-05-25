@@ -57,6 +57,14 @@ class EmbeddingProviderSettings(BaseSettings):
         default="sentence-transformers/all-MiniLM-L6-v2",
         validation_alias="EMBEDDING_MODEL",
     )
+    ollama_url: str = Field(
+        default="http://localhost:11434",
+        validation_alias="OLLAMA_URL",
+    )
+    ollama_vector_size: int = Field(
+        default=768,
+        validation_alias="OLLAMA_VECTOR_SIZE",
+    )
 
 
 class FilterableField(BaseModel):

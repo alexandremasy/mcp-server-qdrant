@@ -33,31 +33,26 @@ Reverted to clean upstream state (no env var hacks at the provider level).
 
 ## Installation & registration in Claude Code
 
-### macOS / Linux
+### Step 1 — Install as an editable uv tool
 
 ```bash
-# Register as user-scoped MCP server (available in all projects)
-claude mcp add \
-  -e QDRANT_URL=https://your-qdrant-host:443 \
-  -e QDRANT_API_KEY=<your-api-key> \
-  -e COLLECTION_NAME=library \
-  -e QDRANT_VECTOR_NAME=dense \
-  -e EMBEDDING_MODEL=nomic-ai/nomic-embed-text-v1.5 \
-  -e QDRANT_READ_ONLY=true \
-  --scope user \
-  qdrant -- uvx --from /path/to/this/fork mcp-server-qdrant
+uv tool install --editable /path/to/this/fork
 ```
 
-### Windows
+This installs `mcp-server-qdrant` as a global command. Because it's editable, any change to the source is live immediately — no reinstall needed.
 
-Find the `uvx.exe` path first:
+### Step 2 — Find the installed binary
 
-```powershell
-where uvx
-# → C:\Users\<you>\AppData\Local\Microsoft\WinGet\Packages\astral-sh.uv_...\uvx.exe
+```bash
+# macOS / Linux
+which mcp-server-qdrant
+
+# Windows
+where mcp-server-qdrant
+# → C:\Users\<you>\.local\bin\mcp-server-qdrant.exe
 ```
 
-Then register (use the full path — Claude Code may not inherit your PATH):
+### Step 3 — Register in Claude Code
 
 ```bash
 claude mcp add \
@@ -66,15 +61,13 @@ claude mcp add \
   -e COLLECTION_NAME=library \
   -e QDRANT_VECTOR_NAME=dense \
   -e "EMBEDDING_MODEL=nomic-ai/nomic-embed-text-v1.5" \
-  -e QDRANT_READ_ONLY=true \
   --scope user \
-  qdrant -- "C:/Users/<you>/AppData/Local/.../uvx.exe" --from "C:/path/to/this/fork" mcp-server-qdrant
+  qdrant -- /full/path/to/mcp-server-qdrant
 ```
 
-Verify: `claude mcp get qdrant` — should show `Status: ✓ Connected`.
+> **Use the full path** — Claude Code may not inherit your shell PATH.
 
-> **Why `uvx --from <local-path>`**: runs the fork directly without a global install.
-> Source changes are live immediately without reinstall.
+Verify: `claude mcp get qdrant` — should show `Status: ✓ Connected`.
 
 ## Configuration reference
 

@@ -142,6 +142,63 @@ class QdrantConnector:
             for result in search_results.points
         ]
 
+    async def delete(
+        self,
+        *,
+        collection_name: str | None = None,
+        point_ids: list[str] | None = None,
+        payload_filter: ArbitraryFilter | None = None,
+        clear_all: bool = False,
+    ) -> str:
+        """
+        Delete points from the Qdrant collection.
+        Exactly one of `point_ids`, `payload_filter`, or `clear_all=True` must be provided.
+        :param collection_name: Target collection (falls back to default).
+        :param point_ids: List of point UUIDs to delete.
+        :param payload_filter: Qdrant filter dict — delete all matching points.
+        :param clear_all: If True, delete every point in the collection.
+        :return: Confirmation message.
+        """
+        collection_name = collection_name or self._default_collection_name
+        assert collection_name is not None
+
+        provided = sum([bool(point_ids), bool(payload_filter), clear_all])
+        if provided == 0:
+            raise ValueError(
+                "Provide at least one of: point_ids, payload_filter, or clear_all=True."
+            )
+        if provided > 1:
+            raise ValueError(
+                "Provide only one of: point_ids, payload_filter, or clear_all=True."
+            )
+
+        collection_exists = await self._client.collection_exists(collection_name)
+        if not collection_exists:
+            return f"Collection '{collection_name}' does not exist."
+
+        if point_ids:
+            await self._client.delete(
+                collection_name=collection_name,
+                points_selector=models.PointIdsList(points=point_ids),
+            )
+            return f"Deleted {len(point_ids)} point(s) from '{collection_name}'."
+
+        if payload_filter is not None:
+            await self._client.delete(
+                collection_name=collection_name,
+                points_selector=models.FilterSelector(
+                    filter=models.Filter(**payload_filter)
+                ),
+            )
+            return f"Deleted points matching filter from '{collection_name}'."
+
+        # clear_all
+        await self._client.delete(
+            collection_name=collection_name,
+            points_selector=models.FilterSelector(filter=models.Filter()),
+        )
+        return f"All points deleted from '{collection_name}'."
+
     async def _ensure_collection_exists(self, collection_name: str):
         """
         Ensure that the collection exists, creating it if necessary.

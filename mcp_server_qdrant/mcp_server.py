@@ -198,3 +198,53 @@ class QdrantMCPServer(FastMCP):
                 name="qdrant-store",
                 description=self.tool_settings.tool_store_description,
             )
+
+            async def delete(
+                ctx: Context,
+                collection_name: Annotated[
+                    str, Field(description="The collection to delete from")
+                ],
+                point_ids: Annotated[
+                    list[str] | None,
+                    Field(description="List of point UUIDs to delete"),
+                ] = None,
+                payload_filter: Annotated[
+                    ArbitraryFilter | None,
+                    Field(
+                        description=(
+                            "Qdrant filter dict to match entries to delete. "
+                            "Example: {\"must\": [{\"key\": \"source_file\", \"match\": {\"value\": \"report.pdf\"}}]}"
+                        )
+                    ),
+                ] = None,
+                clear_all: Annotated[
+                    bool,
+                    Field(description="If true, delete every point in the collection"),
+                ] = False,
+            ) -> str:
+                """
+                Delete entries from Qdrant.
+                Exactly one of point_ids, payload_filter, or clear_all must be provided.
+                """
+                await ctx.debug(
+                    f"Deleting from {collection_name}: ids={point_ids} filter={payload_filter} clear_all={clear_all}"
+                )
+                return await self.qdrant_connector.delete(
+                    collection_name=collection_name,
+                    point_ids=point_ids,
+                    payload_filter=payload_filter,
+                    clear_all=clear_all,
+                )
+
+            delete_foo = delete
+            if self.qdrant_settings.collection_name:
+                delete_foo = make_partial_function(
+                    delete_foo,
+                    {"collection_name": self.qdrant_settings.collection_name},
+                )
+
+            self.tool(
+                delete_foo,
+                name="qdrant-delete",
+                description=self.tool_settings.tool_delete_description,
+            )

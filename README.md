@@ -7,8 +7,8 @@ Ollama instance instead of an in-process model.
 ## Why this fork
 
 The upstream package assumes it owns the Qdrant collection it queries, and it embeds with FastEmbed
-(a model downloaded and run inside the server process). Connecting to a collection built by another
-pipeline (e.g. n8n) breaks on four points:
+(a model downloaded and run inside the server process). Connecting to a collection built by a
+separate ingestion process breaks on four points:
 
 | Issue | Upstream | This fork |
 |---|---|---|
